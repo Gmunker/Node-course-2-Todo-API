@@ -1,0 +1,14 @@
+{
+  "name": "node-todo-api",
+  "version": "1.0.0",
+  "description": "Node Todo API using MongoDB - Complete Node 2",
+  "main": "index.js",
+  "scripts": {
+    "test": "nodemon test -c"
+  },
+  "author": "Greg Munker",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^2.2.12"
+  }
+}
