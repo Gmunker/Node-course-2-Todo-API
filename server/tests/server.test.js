@@ -78,6 +78,7 @@ describe('GET /todos', () => {
 				expect(res.body.todos.length)
 					.toBe(2);
 			})
+			.end(done);
 
 	}); // it should get all todos
 }); // Descrie GET
