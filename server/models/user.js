@@ -40,7 +40,7 @@ UserSchema.methods.toJSON = function() {
 };
 
 UserSchema.methods.generateAuthToken = function() {
-	let user = this;
+	let user = this; // Instance Methods use lower case
 	let access = 'auth';
 	let token = jwt.sign({ _id: user._id.toHexString(), access }, '123abc')
 		.toString();
@@ -51,6 +51,27 @@ UserSchema.methods.generateAuthToken = function() {
 		.then(() => {
 			return token;
 		})
+};
+
+UserSchema.statics.findByToken = function(token) {
+	let User = this; // Model Methods use upper case
+	let decoded;
+
+	try {
+		decoded = jwt.verify(token, '123abc');
+	} catch (e) {
+		// return new Promise((resolve, reject) => {
+		// 	reject();
+		// })
+		return Promise.reject();
+	}
+
+	return User.findOne({
+		'_id': decoded._id,
+		'tokens.token': token,
+		'tokens.access': 'auth'
+	});
+
 };
 
 let User = mongoose.model('User', UserSchema);
