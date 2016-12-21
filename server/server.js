@@ -4,19 +4,20 @@ const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
 const { ObjectID } = require('mongodb');
+const bcrypt = require('bcryptjs');
 
-var { mongoose } = require('./db/mongoose');
-var { Todo } = require('./models/todo');
-var { User } = require('./models/user');
+let { mongoose } = require('./db/mongoose');
+let { Todo } = require('./models/todo');
+let { User } = require('./models/user');
 let { authenticate } = require('./middleware/authenticate');
 
-var app = express();
+let app = express();
 const port = process.env.PORT;
 
 app.use(bodyParser.json());
 
 app.post('/todos', (req, res) => {
-	var todo = new Todo({
+	let todo = new Todo({
 		text: req.body.text
 	});
 
@@ -40,7 +41,7 @@ app.get('/todos', (req, res) => {
 });
 
 app.get('/todos/:id', (req, res) => {
-	var id = req.params.id;
+	let id = req.params.id;
 
 	if (!ObjectID.isValid(id)) {
 		return res.status(404)
@@ -63,7 +64,7 @@ app.get('/todos/:id', (req, res) => {
 });
 
 app.delete('/todos/:id', (req, res) => {
-	var id = req.params.id;
+	let id = req.params.id;
 
 	if (!ObjectID.isValid(id)) {
 		return res.status(404)
@@ -86,8 +87,8 @@ app.delete('/todos/:id', (req, res) => {
 });
 
 app.patch('/todos/:id', (req, res) => {
-	var id = req.params.id;
-	var body = _.pick(req.body, ['text', 'completed']);
+	let id = req.params.id;
+	let body = _.pick(req.body, ['text', 'completed']);
 
 	if (!ObjectID.isValid(id)) {
 		return res.status(404)
@@ -119,8 +120,8 @@ app.patch('/todos/:id', (req, res) => {
 
 // POST /users
 app.post('/users', (req, res) => {
-	var body = _.pick(req.body, ['email', 'password']);
-	var user = new User(body);
+	let body = _.pick(req.body, ['email', 'password']);
+	let user = new User(body);
 
 	user.save()
 		.then(() => {
@@ -140,8 +141,38 @@ app.get('/users/me', authenticate, (req, res) => {
 	res.send(req.user);
 })
 
+// POST /users/login {email, password} findInDb
+
+app.post('/users/login', (req, res) => {
+	let body = _.pick(req.body, ['email', 'password']);
+
+	User.findByCredentials(body.email, body.password)
+		.then((user) => {
+			return user.generateAuthToken()
+				.then((token) => {
+					res.header('x-auth', token)
+						.send(user);
+				})
+		})
+		.catch((e) => {
+			res.status(400)
+				.send();
+		});
+});
+
+app.delete('/users/me/token', authenticate, (req, res) => {
+	req.user.removeToken(req.token)
+		.then(() => {
+			res.status(200)
+				.send();
+		}, (e) => {
+			res.status(400)
+				.send(e);
+		})
+});
+
 app.listen(port, () => {
 	console.log(`Started up at port ${port}`);
 });
 
-module.exports = { app };
+module.exports = { app };;
